@@ -20,7 +20,6 @@ colwhi  = "<span color='#b2b2b2'>"
 colbred = "<span color='#ff4b4b'>"
 colbwhi = "<span color='#ffffff'>"
 
-
 -- Load Debian menu entries
 require("debian.menu")
 
@@ -208,7 +207,7 @@ for s = 1, screen.count() do
     vicious.register(volwidget, vicious.widgets.volume,
         function (widget, args)
             if args[1] == 0 or args[2] == "♩" then
-                return "" .. colwhi .. " vol: " .. coldef .. colbred .. " M " .. coldef .. "" 
+                return "" .. colwhi .. " vol: " .. coldef .. colbred .. " M " .. coldef .. ""
             else
                 return "" .. colwhi .. " vol: " .. coldef .. colbwhi .. args[1] .. "% " .. coldef .. ""
             end
@@ -218,9 +217,29 @@ for s = 1, screen.count() do
             awful.button({ }, 1, function () awful.util.spawn("amixer -q sset Master toggle")   end),
             awful.button({ }, 3, function () awful.util.spawn( terminal .. " -e alsamixer")   end),
             awful.button({ }, 4, function () awful.util.spawn("amixer -q sset Master 2dB+") end),
-            awful.button({ }, 5, function () awful.util.spawn("amixer -q sset Master 2dB-") end)
+            awful.button({ }, 5, function () awful.util.spawn("amixer -q sset Master 2dB+") end)
         )
     )
+
+    -- Keyboard map indicator and changer
+    kbdcfg = {}
+    kbdcfg.cmd = "setxkbmap"
+    kbdcfg.layout = { { "cz", "" }, { "us", "" } }
+    kbdcfg.current = 1  -- cz is our default layout
+    kbdcfg.widget = wibox.widget.textbox()
+    kbdcfg.widget:set_text(" " .. kbdcfg.layout[kbdcfg.current][1] .. " ")
+    kbdcfg.switch = function ()
+    	kbdcfg.current = kbdcfg.current % #(kbdcfg.layout) + 1
+    	local t = kbdcfg.layout[kbdcfg.current]
+    	kbdcfg.widget:set_text(" " .. t[1] .. " ")
+    	os.execute( kbdcfg.cmd .. " " .. t[1] .. " " .. t[2] )
+    end
+
+    -- Mouse bindings
+    kbdcfg.widget:buttons(
+    	awful.util.table.join(awful.button({ }, 1, function () kbdcfg.switch() end))
+    )
+
 
     -- Create a tasklist widget
     mytasklist[s] = awful.widget.tasklist(s, awful.widget.tasklist.filter.currenttags, mytasklist.buttons)
@@ -237,6 +256,7 @@ for s = 1, screen.count() do
     -- Widgets that are aligned to the right
     local right_layout = wibox.layout.fixed.horizontal()
     if s == 1 then right_layout:add(wibox.widget.systray()) end
+    right_layout:add(kbdcfg.widget)
     right_layout:add(volwidget)
     right_layout:add(batwidget)
     right_layout:add(mytextclock)
@@ -250,7 +270,7 @@ for s = 1, screen.count() do
 
     mywibox[s]:set_widget(layout)
 
-    
+
 end
 -- }}}
 
@@ -309,15 +329,22 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey, "Shift"   }, "space", function () awful.layout.inc(layouts, -1) end),
 
     awful.key({ modkey, "Control" }, "n", awful.client.restore),
-    
+
     -- Sound volume
     awful.key({}, "XF86AudioMute", function () os.execute("amixer -D pulse set Master 1+ toggle") end),
-    awful.key({}, "XF86AudioLowerVolume", function () os.execute("amixer set Master 5dB-") end),
-    awful.key({}, "XF86AudioRaiseVolume", function () os.execute("amixer set Master 5dB+") end),
-    
+    awful.key({}, "XF86AudioLowerVolume", function () os.execute("amixer set Master 5dB- unmute") end),
+    awful.key({}, "XF86AudioRaiseVolume", function () os.execute("amixer set Master 5dB+ unmute") end),
+
+    -- layout kb
+    -- Alt + Shift switches the current keyboard layout
+    awful.key({ "modkey" }, "Shift", function () kbdcfg.switch() end),
+
+
     -- Printscreen button
     awful.key({ }, "Print", function () awful.util.spawn("scrot -e 'mv $f ~/screenshots/ 2>/dev/null'") end),
-    
+       -- Lockscreen
+    awful.key({modkey, "Control" }, "l", function () awful.util.spawn("xscreensaver-command -lock") end),
+
     -- Prompt
     awful.key({ modkey },            "r",     function () mypromptbox[mouse.screen]:run() end),
 
@@ -504,10 +531,16 @@ client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_n
 -- }}}
 
 -- network manager
-os.execute("nm-applet &")
+os.execute("pkill nm-applet; nm-applet &")
 -- dropbox
 os.execute("dropbox start")
 -- numlock ON
 os.execute("numlockx")
 -- disable screensaver
 os.execute("xset s off && xset -dpms")
+-- enable lockscreen
+os.execute("xscreensaver -no-splash &")
+-- default expand display to HDMI
+os.execute("xrandr --output LVDS1 --auto; xrandr --output HDMI1 --auto --left-of LVDS1")
+-- run redshift after start
+os.execute("pkill redshift; redshift -l 49.5925:17.2636 -t 5500:3200 &")
