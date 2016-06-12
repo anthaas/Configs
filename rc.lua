@@ -337,7 +337,7 @@ globalkeys = awful.util.table.join(
 
     -- layout kb
     -- Alt + Shift switches the current keyboard layout
-    awful.key({ "modkey" }, "Shift", function () kbdcfg.switch() end),
+    awful.key({ "Mod1" }, "Shift_L", function () kbdcfg.switch() end),
 
 
     -- Printscreen button
