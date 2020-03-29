@@ -181,5 +181,6 @@ bar {
 # Please remove the following exec line:
 #######################################################################
 exec xrandr --output HDMI-1 --auto --left-of LVDS-1
-exec xinput set-prop 18 298 1
-
+exec xinput set-prop 19 298 1
+exec setxkbmap "us,cz(qwerty)"  -option grp:alt_shift_toggle
+exec --no-startup-id feh --bg-fill ~/Pictures/wallpaperST.jpg
